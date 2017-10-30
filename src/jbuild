@@ -1,7 +1,7 @@
 (library
  ((name        hidapi)
   (public_name hidapi)
-  (libraries ())
+  (libraries (cstruct))
   (preprocess (pps (ppx_sexp_conv)))
   (c_names (hidapi_stubs))
   (c_flags (:include c_flags.sexp))

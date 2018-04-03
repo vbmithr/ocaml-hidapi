@@ -46,6 +46,9 @@ val open_path : string -> t option
     can be discovered with [enumerate] or a platform-specific path name
     can be used (eg: /dev/hidraw0 on Linux). *)
 
+val open_id_exn : vendor_id:int -> product_id:int -> t
+val open_path_exn : string -> t
+
 val write : t -> Cstruct.t -> (int, string) result
 (** [write t cs] is [Ok nb_bytes_written] on success, or [Error
     description] in case of error. *)
@@ -57,6 +60,8 @@ val read : ?timeout:int -> t -> Cstruct.t -> int -> (int, string) result
 val set_nonblocking : t -> bool -> (unit, string) result
 (** [set_nonblocking t v] sets nonblocking mode if [v] is [true], or
     sets blocking mode otherwise. *)
+
+val set_nonblocking_exn : t -> bool -> unit
 
 val close : t -> unit
 (** [close t] closes the HID device [t]. *)

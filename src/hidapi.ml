@@ -50,6 +50,16 @@ let open_id ~vendor_id ~product_id =
 
 external open_path : string -> t option = "stub_hid_open_path" [@@noalloc]
 
+let open_id_exn ~vendor_id ~product_id =
+  match open_id ~vendor_id ~product_id with
+  | None -> failwith "open_id_exn"
+  | Some t -> t
+
+let open_path_exn path =
+  match open_path path with
+  | None -> failwith "open_path_exn"
+  | Some t -> t
+
 external hid_write : t -> Cstruct.buffer -> int -> int = "stub_hid_write" [@@noalloc]
 external hid_read_timeout : t -> Cstruct.buffer -> int -> int -> int = "stub_hid_read_timeout" [@@noalloc]
 external hid_read : t -> Cstruct.buffer -> int -> int = "stub_hid_read" [@@noalloc]
@@ -61,6 +71,11 @@ let set_nonblocking t v =
   match hid_set_nonblocking t v with
   | -1 -> Error (match hid_error t with None -> "" | Some msg -> msg)
   | _ -> Ok ()
+
+let set_nonblocking_exn t v =
+  match set_nonblocking t v with
+  | Error err -> failwith err
+  | Ok () -> ()
 
 let write t buf =
   match hid_write t (Cstruct.to_bigarray buf) (Cstruct.len buf) with

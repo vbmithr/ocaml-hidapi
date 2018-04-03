@@ -18,29 +18,59 @@ type device_info = {
   interface_number : int ;
 } [@@deriving sexp]
 
-type hid_device
+type t
+type info
 
-external hid_init : unit -> unit = "ml_hid_init" [@@noalloc]
-external hid_exit : unit -> unit = "ml_hid_exit" [@@noalloc]
-external hid_enumerate : int -> int -> device_info list = "ml_hid_enumerate"
-external hid_open : int -> int -> hid_device = "ml_hid_open" [@@noalloc]
-external hid_open_path : string -> hid_device = "ml_hid_open_path" [@@noalloc]
-external hid_write : hid_device -> Cstruct.buffer -> int -> int = "ml_hid_write" [@@noalloc]
-external hid_read_timeout : hid_device -> Cstruct.buffer -> int -> int -> int = "ml_hid_read_timeout" [@@noalloc]
-external hid_read : hid_device -> Cstruct.buffer -> int -> int = "ml_hid_read" [@@noalloc]
-external hid_set_nonblocking : hid_device -> bool -> unit = "ml_hid_set_nonblocking" [@@noalloc]
-external hid_close : hid_device -> unit = "ml_hid_close" [@@noalloc]
+external hid_error : t -> string option = "stub_hid_error"
 
-let hid_enumerate ?(vendor_id=0) ?(product_id=0) () =
-  hid_enumerate vendor_id product_id
+external init : unit -> unit = "stub_hid_init" [@@noalloc]
+external deinit : unit -> unit = "stub_hid_exit" [@@noalloc]
 
-let hid_open ~vendor_id ~product_id =
+external hid_enumerate : int -> int -> info option = "stub_hid_enumerate"
+external hid_enumerate_next : info -> device_info * info option = "stub_hid_enumerate_next"
+external hid_free_enumeration : info -> unit = "stub_hid_free_enumeration" [@@noalloc]
+
+let enumerate ?(vendor_id=0) ?(product_id=0) () =
+  match hid_enumerate vendor_id product_id with
+  | None -> []
+  | Some info ->
+    let rec inner acc i =
+      match hid_enumerate_next i with
+      | di, None -> di :: acc
+      | di, Some next -> inner (di :: acc) next
+    in
+    let res = inner [] info in
+    hid_free_enumeration info ;
+    res
+
+external hid_open : int -> int -> t option = "stub_hid_open"
+
+let open_id ~vendor_id ~product_id =
   hid_open vendor_id product_id
 
-let hid_write dev buf = hid_write dev (Cstruct.to_bigarray buf) (Cstruct.len buf)
+external open_path : string -> t option = "stub_hid_open_path" [@@noalloc]
 
-let hid_read ?(timeout=(-1)) dev buf len =
-  hid_read_timeout dev (Cstruct.to_bigarray buf) len timeout
+external hid_write : t -> Cstruct.buffer -> int -> int = "stub_hid_write" [@@noalloc]
+external hid_read_timeout : t -> Cstruct.buffer -> int -> int -> int = "stub_hid_read_timeout" [@@noalloc]
+external hid_read : t -> Cstruct.buffer -> int -> int = "stub_hid_read" [@@noalloc]
+external hid_set_nonblocking : t -> bool -> int = "stub_hid_set_nonblocking" [@@noalloc]
+
+external close : t -> unit = "stub_hid_close" [@@noalloc]
+
+let set_nonblocking t v =
+  match hid_set_nonblocking t v with
+  | -1 -> Error (match hid_error t with None -> "" | Some msg -> msg)
+  | _ -> Ok ()
+
+let write t buf =
+  match hid_write t (Cstruct.to_bigarray buf) (Cstruct.len buf) with
+  | -1 -> Error (match hid_error t with None -> "" | Some msg -> msg)
+  | nb_written -> Ok nb_written
+
+let read ?(timeout=(-1)) t buf len =
+  match hid_read_timeout t (Cstruct.to_bigarray buf) len timeout with
+  | -1 -> Error (match hid_error t with None -> "" | Some msg -> msg)
+  | nb_read -> Ok nb_read
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2017 Vincent Bernardoff

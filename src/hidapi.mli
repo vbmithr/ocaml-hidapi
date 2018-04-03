@@ -16,17 +16,50 @@ type device_info = {
   interface_number : int ;
 } [@@deriving sexp]
 
-type hid_device
+type t
 
-val hid_init : unit -> unit
-val hid_exit : unit -> unit
-val hid_enumerate : ?vendor_id:int -> ?product_id:int -> unit -> device_info list
-val hid_open : vendor_id:int -> product_id:int -> hid_device
-val hid_open_path : string -> hid_device
-val hid_write : hid_device -> Cstruct.t -> int
-val hid_read : ?timeout:int -> hid_device -> Cstruct.t -> int -> int
-val hid_set_nonblocking : hid_device -> bool -> unit
-val hid_close : hid_device -> unit
+val init : unit -> unit
+(** [init ()] initializes the HIDAPI library. Calling it is not
+    strictly necessary, however this function should be called at the
+    beginning of execution however, if there is a chance of HIDAPI
+    handles being opened by different threads simultaneously. *)
+
+val deinit : unit -> unit
+(** [deinit ()] frees all of the static data associated with
+    HIDAPI. It should be called at the end of execution to avoid memory
+    leaks. *)
+
+val enumerate :
+  ?vendor_id:int -> ?product_id:int -> unit -> device_info list
+(** [enumerate ?vendor_id ?product_id ()] is the list of HID devices
+    attached to the system. The optional arguments are a way to filter
+    the results returned. *)
+
+val open_id : vendor_id:int -> product_id:int -> t option
+(** [open_id ~vendor_id ~product_id] is the device handle of HID
+    device (vendor_id, product_id), or None if no such device exist or
+    in case of error. *)
+
+val open_path : string -> t option
+(** [open_path path] is the device handle of HID device of path
+    [path], or None if no such device exist or in case of error. [path]
+    can be discovered with [enumerate] or a platform-specific path name
+    can be used (eg: /dev/hidraw0 on Linux). *)
+
+val write : t -> Cstruct.t -> (int, string) result
+(** [write t cs] is [Ok nb_bytes_written] on success, or [Error
+    description] in case of error. *)
+
+val read : ?timeout:int -> t -> Cstruct.t -> int -> (int, string) result
+(** [read ?timeout t cs len] is [Ok nb_bytes_read] on success, or
+    [Error description] in case of error. *)
+
+val set_nonblocking : t -> bool -> (unit, string) result
+(** [set_nonblocking t v] sets nonblocking mode if [v] is [true], or
+    sets blocking mode otherwise. *)
+
+val close : t -> unit
+(** [close t] closes the HID device [t]. *)
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2017 Vincent Bernardoff

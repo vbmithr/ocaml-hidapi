@@ -9,39 +9,85 @@
 #include <caml/mlvalues.h>
 #include <caml/memory.h>
 #include <caml/alloc.h>
-#include <caml/fail.h>
+#include <caml/custom.h>
 #include <caml/bigarray.h>
 
-char buf[1024];
+typedef struct hid_device_info hid_device_info_t;
 
-const char* get_hid_error(hid_device *dev) {
-    const wchar_t *err_string;
-    size_t ret;
-    err_string = hid_error(dev);
+#define Hid_val(v) (*((hid_device **) Data_custom_val(v)))
+#define Hidinfo_val(v) (*((hid_device_info_t **) Data_custom_val(v)))
 
-    if (err_string == NULL)
-        return NULL;
+#define Gen_custom_block(SNAME, CNAME, MNAME)                           \
+    static int compare_##SNAME(value a, value b) {                      \
+        CNAME *aa = MNAME(a), *bb = MNAME(b);                           \
+        return (aa == bb ? 0 : (aa < bb ? -1 : 1));                     \
+    }                                                                   \
+                                                                        \
+    static struct custom_operations hidapi_##SNAME##_ops = {		\
+        .identifier = "hidapi_" #SNAME,					\
+        .finalize = custom_finalize_default,                            \
+        .compare = compare_##SNAME,                                     \
+        .compare_ext = custom_compare_ext_default,                      \
+        .hash = custom_hash_default,                                    \
+        .serialize = custom_serialize_default,                          \
+        .deserialize = custom_deserialize_default                       \
+    };                                                                  \
+                                                                        \
+    static value alloc_##SNAME (CNAME *a) {                             \
+        value custom = alloc_custom(&hidapi_##SNAME##_ops, sizeof(CNAME *), 0, 1); \
+        MNAME(custom) = a;                                              \
+        return custom;                                                  \
+    }
 
-    snprintf(buf, sizeof(buf), "%ls", err_string);
-    return buf;
+Gen_custom_block(hid, hid_device, Hid_val)
+Gen_custom_block(hidinfo, hid_device_info_t, Hidinfo_val)
+
+CAMLprim value stub_hid_error(value dev) {
+    CAMLparam1(dev);
+    CAMLlocal2(ret, msg);
+
+    const wchar_t *err_string = hid_error(Hid_val(dev));
+
+    if (err_string == NULL) ret = Val_unit;
+
+    else {
+	char buf[1024] = {0};
+	snprintf(buf, sizeof(buf), "%ls", err_string);
+	ret = caml_alloc(1, 0);
+	msg = caml_copy_string(buf);
+	Store_field(ret, 0, msg);
+    }
+
+    CAMLreturn(ret);
 }
 
-CAMLprim value copy_device_info (struct hid_device_info *di) {
+static value copy_device_info (hid_device_info_t *di) {
     CAMLparam0();
-    CAMLlocal1(result);
+    CAMLlocal5(result, path, sn, ms, ps);
+
     result = caml_alloc_tuple(10);
+    char buf[1024] = {0};
 
+    path = caml_copy_string(di->path);
+    Store_field(result, 0, path);
 
-    Store_field(result, 0, caml_copy_string(di->path));
     Store_field(result, 1, Val_int(di->vendor_id));
     Store_field(result, 2, Val_int(di->product_id));
+
     snprintf(buf, sizeof(buf), "%ls", di->serial_number);
-    Store_field(result, 3, caml_copy_string(buf));
+    sn = caml_copy_string(buf);
+    Store_field(result, 3, sn);
+
     Store_field(result, 4, Val_int(di->release_number));
+
     snprintf(buf, sizeof(buf), "%ls", di->manufacturer_string);
-    Store_field(result, 5, caml_copy_string(buf));
+    ms = caml_copy_string(buf);
+    Store_field(result, 5, ms);
+
     snprintf(buf, sizeof(buf), "%ls", di->product_string);
-    Store_field(result, 6, caml_copy_string(buf));
+    ps = caml_copy_string(buf);
+    Store_field(result, 6, ps);
+
     Store_field(result, 7, Val_int(di->usage_page));
     Store_field(result, 8, Val_int(di->usage));
     Store_field(result, 9, Val_int(di->interface_number));
@@ -49,108 +95,107 @@ CAMLprim value copy_device_info (struct hid_device_info *di) {
     CAMLreturn(result);
 }
 
-CAMLprim value ml_hid_init(void) {
-    CAMLparam0();
-    int ret = hid_init();
-    if (ret == -1)
-        caml_failwith("ml_hid_init");
-
-    CAMLreturn(Val_unit);
+CAMLprim value stub_hid_init(value unit) {
+    return Val_int(hid_init());
 }
 
-CAMLprim value ml_hid_exit(void) {
-    CAMLparam0();
-    int ret = hid_exit();
-    if (ret == -1)
-        caml_failwith("ml_hid_exit");
-
-    CAMLreturn(Val_unit);
+CAMLprim value stub_hid_exit(value unit) {
+    return Val_int(hid_exit());
 }
 
-CAMLprim value ml_hid_enumerate(value vendor_id, value product_id) {
+CAMLprim value stub_hid_enumerate(value vendor_id, value product_id) {
     CAMLparam2(vendor_id, product_id);
-    CAMLlocal2(result, tmp);
-
-    tmp = Val_int(0);
-    result = Val_int(0);
+    CAMLlocal2(ret, hidinfo);
 
     struct hid_device_info *di = hid_enumerate(Int_val(vendor_id), Int_val(product_id));
-    struct hid_device_info *cur = di;
 
-    while(cur != NULL) {
-        result = caml_alloc_tuple(2);
-        Store_field(result, 0, copy_device_info(cur));
-        Store_field(result, 1, tmp);
-        tmp = result;
-        cur = cur->next;
+    if (di == NULL) ret = Val_unit;
+
+    else {
+	ret = caml_alloc(1, 0);
+	hidinfo = alloc_hidinfo(di);
+	Store_field(ret, 0, hidinfo);
     }
 
-    hid_free_enumeration(di);
-    CAMLreturn(result);
+    CAMLreturn(ret);
 }
 
-CAMLprim value ml_hid_open(value vendor_id, value product_id) {
+CAMLprim value stub_hid_free_enumeration(value hid_info) {
+    hid_free_enumeration(Hidinfo_val(hid_info));
+    return Val_unit;
+}
+
+CAMLprim value stub_hid_enumerate_next(value hid_info) {
+    CAMLparam1(hid_info);
+    CAMLlocal4(ret, info, nextopt, next);
+
+    hid_device_info_t *di = Hidinfo_val(hid_info);
+
+    info = copy_device_info(di);
+    ret = caml_alloc_tuple(2);
+
+    if (!di->next) nextopt = Val_unit;
+    else {
+	nextopt = caml_alloc(1, 0);
+	next = alloc_hidinfo(di->next);
+	Store_field(nextopt, 0, next);
+    }
+
+    Store_field(ret, 0, info);
+    Store_field(ret, 1, nextopt);
+
+    CAMLreturn(ret);
+}
+
+CAMLprim value stub_hid_open(value vendor_id, value product_id) {
     CAMLparam2(vendor_id, product_id);
+    CAMLlocal2(ret, hid);
+
     hid_device* h = hid_open(Int_val(vendor_id), Int_val(product_id), NULL);
-    if (h == NULL)
-        caml_failwith("ml_hid_open");
+    if (h == NULL) ret = Val_unit;
+    else {
+	ret = caml_alloc(1, 0);
+	hid = alloc_hid(h);
+	Store_field(ret, 0, hid);
+    }
 
-    CAMLreturn((value)h);
+    CAMLreturn(ret);
 }
 
-CAMLprim value ml_hid_open_path(value path) {
+CAMLprim value stub_hid_open_path(value path) {
     CAMLparam1(path);
+    CAMLlocal2(ret, hid);
+
     hid_device* h = hid_open_path(String_val(path));
-    if (h == NULL)
-        caml_failwith("ml_hid_open");
+    if (h == NULL) ret = Val_unit;
+    else {
+	ret = caml_alloc(1, 0);
+	hid = alloc_hid(h);
+	Store_field(ret, 0, hid);
+    }
 
-    CAMLreturn((value)h);
+    CAMLreturn(ret);
 }
 
-CAMLprim value ml_hid_write(value dev, value data, value len) {
-    CAMLparam3(dev, data, len);
-    int nb_written;
-    nb_written = hid_write((hid_device *)dev, Caml_ba_data_val(data), Int_val(len));
-    if (nb_written == -1)
-        caml_failwith(get_hid_error((hid_device *)dev));
-
-    CAMLreturn(Val_int(nb_written));
+CAMLprim value stub_hid_write(value dev, value data, value len) {
+    return Val_int(hid_write(Hid_val(dev), Caml_ba_data_val(data), Int_val(len)));
 }
 
-CAMLprim value ml_hid_read_timeout(value dev, value data, value len, value ms) {
-    CAMLparam4(dev, data, len, ms);
-    int nb_read;
-    nb_read = hid_read_timeout((hid_device *)dev, Caml_ba_data_val(data), Int_val(len), Int_val(ms));
-    if (nb_read == -1)
-        caml_failwith(get_hid_error((hid_device *)dev));
-
-    CAMLreturn(Val_int(nb_read));
+CAMLprim value stub_hid_read_timeout(value dev, value data, value len, value ms) {
+    return Val_int(hid_read_timeout(Hid_val(dev), Caml_ba_data_val(data), Int_val(len), Int_val(ms)));
 }
 
-CAMLprim value ml_hid_read(value dev, value data, value len) {
-    CAMLparam3(dev, data, len);
-    int nb_read;
-    nb_read = hid_read((hid_device *)dev, Caml_ba_data_val(data), Int_val(len));
-    if (nb_read == -1)
-        caml_failwith(get_hid_error((hid_device *)dev));
-
-    CAMLreturn(Val_int(nb_read));
+CAMLprim value stub_hid_read(value dev, value data, value len) {
+    return Val_int(hid_read(Hid_val(dev), Caml_ba_data_val(data), Int_val(len)));
 }
 
-CAMLprim value ml_hid_set_nonblocking(value dev, value nonblock) {
-    CAMLparam2(dev, nonblock);
-    int ret;
-    ret = hid_set_nonblocking((hid_device *)dev, Bool_val(nonblock));
-    if (ret == -1)
-        caml_failwith(get_hid_error((hid_device *)dev));
-
-    CAMLreturn(Val_unit);
+CAMLprim value stub_hid_set_nonblocking(value dev, value nonblock) {
+    return Val_int(hid_set_nonblocking(Hid_val(dev), Bool_val(nonblock)));
 }
 
-CAMLprim value ml_hid_close(value dev) {
-    CAMLparam1(dev);
-    hid_close((hid_device *)dev);
-    CAMLreturn(Val_unit);
+CAMLprim value stub_hid_close(value dev) {
+    hid_close(Hid_val(dev));
+    return Val_unit;
 }
 
 /* --------------------------------------------------------------------------

@@ -62,7 +62,6 @@ let open_path_exn path =
 
 external hid_write : t -> Cstruct.buffer -> int -> int = "stub_hid_write" [@@noalloc]
 external hid_read_timeout : t -> Cstruct.buffer -> int -> int -> int = "stub_hid_read_timeout" [@@noalloc]
-external hid_read : t -> Cstruct.buffer -> int -> int = "stub_hid_read" [@@noalloc]
 external hid_set_nonblocking : t -> bool -> int = "stub_hid_set_nonblocking" [@@noalloc]
 
 external close : t -> unit = "stub_hid_close" [@@noalloc]

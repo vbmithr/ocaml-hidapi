@@ -79,8 +79,17 @@ let set_nonblocking_exn t v =
   | Error err -> failwith err
   | Ok () -> ()
 
-let write t buf =
-  match hid_write t buf (Bigstring.length buf) with
+let write t ?len buf =
+  let buflen = Bigstring.length buf in
+  let len =
+    match len with
+    | None -> buflen
+    | Some l when l < 0 ->
+        invalid_arg (Printf.sprintf "write: len = %d must be positive" l)
+    | Some l when l > buflen ->
+        invalid_arg (Printf.sprintf "write: len is too big (%d > %d)" l buflen)
+    | Some l -> l in
+  match hid_write t buf len with
   | -1 -> Error (match hid_error t with None -> "" | Some msg -> msg)
   | nb_written -> Ok nb_written
 

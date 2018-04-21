@@ -14,5 +14,6 @@ available: [
 build: [ "jbuilder" "build" "-j" jobs "-p" name "@install" ]
 depends: [
   "jbuilder" {build & >= "1.0+beta13"}
-  "cstruct" {>= "3.1.1"}
+  "configurator" {build & >= "v0.10.0"}
+  "bigstring" {>= "0.1.1"}
 ]

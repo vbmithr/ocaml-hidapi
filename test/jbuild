@@ -4,6 +4,6 @@
   (libraries (hidapi))))
 
 (alias
- ((name    runtest)
+ ((name    runtest-hidapi)
   (deps    (enumerate.exe))
   (action  (run ${<}))))

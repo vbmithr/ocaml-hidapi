@@ -49,11 +49,11 @@ val open_path : string -> t option
 val open_id_exn : vendor_id:int -> product_id:int -> t
 val open_path_exn : string -> t
 
-val write : t -> Cstruct.t -> (int, string) result
+val write : t -> Bigstring.t -> (int, string) result
 (** [write t cs] is [Ok nb_bytes_written] on success, or [Error
     description] in case of error. *)
 
-val read : ?timeout:int -> t -> Cstruct.t -> int -> (int, string) result
+val read : ?timeout:int -> t -> Bigstring.t -> int -> (int, string) result
 (** [read ?timeout t cs len] is [Ok nb_bytes_read] on success, or
     [Error description] in case of error. *)
 

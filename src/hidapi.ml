@@ -60,11 +60,14 @@ let open_path_exn path =
   | None -> failwith "open_path_exn"
   | Some t -> t
 
-external hid_write : t -> Cstruct.buffer -> int -> int = "stub_hid_write" [@@noalloc]
-external hid_read_timeout : t -> Cstruct.buffer -> int -> int -> int = "stub_hid_read_timeout" [@@noalloc]
-external hid_set_nonblocking : t -> bool -> int = "stub_hid_set_nonblocking" [@@noalloc]
-
-external close : t -> unit = "stub_hid_close" [@@noalloc]
+external hid_write :
+  t -> Bigstring.t -> int -> int = "stub_hid_write" [@@noalloc]
+external hid_read_timeout :
+  t -> Bigstring.t -> int -> int -> int = "stub_hid_read_timeout" [@@noalloc]
+external hid_set_nonblocking :
+  t -> bool -> int = "stub_hid_set_nonblocking" [@@noalloc]
+external close :
+  t -> unit = "stub_hid_close" [@@noalloc]
 
 let set_nonblocking t v =
   match hid_set_nonblocking t v with
@@ -77,12 +80,12 @@ let set_nonblocking_exn t v =
   | Ok () -> ()
 
 let write t buf =
-  match hid_write t (Cstruct.to_bigarray buf) (Cstruct.len buf) with
+  match hid_write t buf (Bigstring.length buf) with
   | -1 -> Error (match hid_error t with None -> "" | Some msg -> msg)
   | nb_written -> Ok nb_written
 
 let read ?(timeout=(-1)) t buf len =
-  match hid_read_timeout t (Cstruct.to_bigarray buf) len timeout with
+  match hid_read_timeout t buf len timeout with
   | -1 -> Error (match hid_error t with None -> "" | Some msg -> msg)
   | nb_read -> Ok nb_read
 

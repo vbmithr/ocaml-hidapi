@@ -16,7 +16,7 @@ let () =
         match C.Pkg_config.get c with
         | None -> default
         | Some pc ->
-            Option.value (C.Pkg_config.query pc ~package:"hidapi-libusb") ~default
+            Option.value (C.Pkg_config.query pc ~package:"hidapi") ~default
       in
 
       write_sexp "c_flags.sexp"         (sexp_of_list sexp_of_string conf.cflags);

@@ -3,8 +3,6 @@
    Distributed under the ISC license, see terms at the end of the file.
   ---------------------------------------------------------------------------*)
 
-open Sexplib.Std
-
 type device_info = {
   path : string ;
   vendor_id : int ;
@@ -16,7 +14,7 @@ type device_info = {
   usage_page : int ;
   usage : int ;
   interface_number : int ;
-} [@@deriving sexp]
+}
 
 type t
 type info

@@ -14,7 +14,7 @@ type device_info = {
   usage_page : int ;
   usage : int ;
   interface_number : int ;
-} [@@deriving sexp]
+}
 
 type t
 

@@ -8,8 +8,8 @@ let write_sexp fn sexp =
 let () =
   C.main ~name:"hidapi" (fun c ->
       let default : C.Pkg_config.package_conf =
-        { libs   = []
-        ; cflags = []
+        { libs   = ["-lhidapi"]
+        ; cflags = ["-I/usr/include/hidapi"]
         }
       in
       let conf =

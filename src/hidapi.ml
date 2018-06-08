@@ -46,7 +46,7 @@ external hid_open : int -> int -> t option = "stub_hid_open"
 let open_id ~vendor_id ~product_id =
   hid_open vendor_id product_id
 
-external open_path : string -> t option = "stub_hid_open_path" [@@noalloc]
+external open_path : string -> t option = "stub_hid_open_path"
 
 let open_id_exn ~vendor_id ~product_id =
   match open_id ~vendor_id ~product_id with

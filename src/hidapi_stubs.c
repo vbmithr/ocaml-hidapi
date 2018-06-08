@@ -66,50 +66,17 @@ static value copy_device_info (hid_device_info_t *di) {
     CAMLlocal5(result, path, sn, ms, ps);
     CAMLlocal3(ret1, ret2, ret3);
 
-    result = caml_alloc_tuple(10);
+    result = caml_alloc_tuple(7);
     char buf[1024] = {0};
 
     path = caml_copy_string(di->path);
     Store_field(result, 0, path);
-
     Store_field(result, 1, Val_int(di->vendor_id));
     Store_field(result, 2, Val_int(di->product_id));
-
-    if (di->serial_number == NULL)
-	Store_field(result, 3, Val_unit);
-    else {
-	snprintf(buf, sizeof(buf), "%ls", di->serial_number);
-	ret1 = caml_alloc(1, 0);
-	sn = caml_copy_string(buf);
-	Store_field(ret1, 0, sn);
-	Store_field(result, 3, ret1);
-    }
-
-    Store_field(result, 4, Val_int(di->release_number));
-
-    if (di->manufacturer_string == NULL)
-	Store_field(result, 5, Val_unit);
-    else {
-	snprintf(buf, sizeof(buf), "%ls", di->manufacturer_string);
-	ret2 = caml_alloc(1, 0);
-	ms = caml_copy_string(buf);
-	Store_field(ret2, 0, ms);
-	Store_field(result, 5, ret2);
-    }
-
-    if (di->product_string == NULL)
-	Store_field(result, 6, Val_unit);
-    else {
-	snprintf(buf, sizeof(buf), "%ls", di->product_string);
-	ret3 = caml_alloc(1, 0);
-	ps = caml_copy_string(buf);
-	Store_field(ret3, 0, ps);
-	Store_field(result, 6, ret3);
-    }
-
-    Store_field(result, 7, Val_int(di->usage_page));
-    Store_field(result, 8, Val_int(di->usage));
-    Store_field(result, 9, Val_int(di->interface_number));
+    Store_field(result, 2, Val_int(di->release_number));
+    Store_field(result, 4, Val_int(di->usage_page));
+    Store_field(result, 5, Val_int(di->usage));
+    Store_field(result, 6, Val_int(di->interface_number));
 
     CAMLreturn(result);
 }

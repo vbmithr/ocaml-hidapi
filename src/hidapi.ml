@@ -7,10 +7,7 @@ type device_info = {
   path : string ;
   vendor_id : int ;
   product_id : int ;
-  serial_number : string option ;
   release_number : int ;
-  manufacturer_string : string option ;
-  product_string : string option ;
   usage_page : int ;
   usage : int ;
   interface_number : int ;

@@ -7,10 +7,12 @@ let () =
                                       serial_number; release_number;
                                       manufacturer_string; product_string;
                                       usage_page; usage; interface_number } ->
+    let s = match serial_number with None -> "" | Some s -> s in
+    let m = match manufacturer_string with None -> "" | Some s -> s in
+    let p = match product_string with None -> "" | Some s -> s in
     Printf.printf "%s 0x%04x 0x%04x %s %d %s %s %d\n"
       path vendor_id product_id
-      serial_number release_number
-      manufacturer_string product_string
+      s release_number m p
       interface_number ;
     match open_id ~vendor_id ~product_id with
     | None ->

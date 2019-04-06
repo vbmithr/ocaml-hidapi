@@ -4,7 +4,7 @@
   --------------------------------------------------------------------------- */
 
 #include <stdio.h>
-#include <hidapi/hidapi.h>
+#include <hidapi.h>
 
 #include <caml/mlvalues.h>
 #include <caml/memory.h>

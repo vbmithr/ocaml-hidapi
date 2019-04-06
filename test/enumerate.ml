@@ -6,7 +6,7 @@ let () =
   ListLabels.iter devs ~f:begin fun { path; vendor_id; product_id;
                                       serial_number; release_number;
                                       manufacturer_string; product_string;
-                                      usage_page; usage; interface_number } ->
+                                      interface_number ; _ } ->
     let s = match serial_number with None -> "" | Some s -> s in
     let m = match manufacturer_string with None -> "" | Some s -> s in
     let p = match product_string with None -> "" | Some s -> s in

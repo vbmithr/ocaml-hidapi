@@ -50,8 +50,8 @@ val open_id_exn : vendor_id:int -> product_id:int -> t
 val open_path_exn : string -> t
 
 val write : t -> ?len:int -> Bigstring.t -> (int, string) result
-(** [write t buf] is [Ok nb_bytes_written] on success, or [Error
-    description] in case of error. *)
+(** [write t buf] is [Ok nb_bytes_written] on success, or
+    [Error description] in case of error. *)
 
 val read : ?timeout:int -> t -> Bigstring.t -> int -> (int, string) result
 (** [read ?timeout t buf len] is [Ok nb_bytes_read] on success, or

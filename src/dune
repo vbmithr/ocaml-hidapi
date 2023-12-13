@@ -2,7 +2,19 @@
  (name hidapi)
  (public_name hidapi)
  (libraries bigstring)
+ (modules Hidapi)
  (c_names hidapi_stubs)
+ (c_flags
+  (:include c_flags.sexp))
+ (c_library_flags
+  (:include c_library_flags.sexp)))
+
+(library
+ (name hidapi_lwt)
+ (public_name hidapi-lwt)
+ (libraries hidapi lwt lwt.unix)
+ (modules Hidapi_lwt)
+ (c_names hidapi_lwt_stubs)
  (c_flags
   (:include c_flags.sexp))
  (c_library_flags

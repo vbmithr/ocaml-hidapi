@@ -1,6 +1,7 @@
 (executable
  (name enumerate)
  (public_name ocaml-hid-enumerate)
+ (package hidapi)
  (libraries hidapi))
 
 (alias

@@ -1,0 +1,16 @@
+(library
+ (name hidapi_lwt)
+ (public_name hidapi-lwt)
+ (libraries hidapi lwt lwt.unix)
+ (c_names hidapi_lwt_stubs)
+ (c_flags
+  (:include c_flags.sexp))
+ (c_library_flags
+  (:include c_library_flags.sexp)))
+
+(rule
+ (targets c_flags.sexp c_library_flags.sexp)
+ (deps
+  (:< config/discover.exe))
+ (action
+  (run %{<})))

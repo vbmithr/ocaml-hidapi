@@ -2,7 +2,14 @@
  (name enumerate)
  (public_name ocaml-hid-enumerate)
  (package hidapi)
+ (modules Enumerate)
  (libraries hidapi))
+
+(test
+ (name enumerate_lwt)
+ (package hidapi-lwt)
+ (modules Enumerate_lwt)
+ (libraries hidapi-lwt))
 
 (alias
  (name runtest-hidapi)

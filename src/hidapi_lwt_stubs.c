@@ -179,23 +179,21 @@ struct job_hid_read_timeout {
   struct lwt_unix_job job;
   /* The file descriptor. */
   hid_device *dev;
-  value data;
+  void *data;
   int milliseconds;
   long length;
   long result;
   int error_code;
-  char buffer[];
 };
 
 static void worker_hid_read_timeout(struct job_hid_read_timeout *job) {
-  job->result = hid_read_timeout(job->dev, job->buffer, job->length, job->milliseconds);
+  job->result = hid_read_timeout(job->dev, job->data, job->length, job->milliseconds);
 }
 
 static value result_hid_read_timeout(struct job_hid_read_timeout *job)
 {
   long result = job->result;
   LWT_UNIX_CHECK_JOB(job, result < 0, "hid_read_timeout");
-  memcpy(Caml_ba_data_val(job->data), job->buffer, result);
   lwt_unix_free_job(&job->job);
   return Val_long(result);
 }
@@ -205,11 +203,11 @@ CAMLprim value hid_read_timeout_job(value mldev, value mldata, value mllen, valu
   long length = Long_val(mllen);
   hid_device *dev = Hid_val(mldev);
   int milliseconds = Long_val(mlms);
-  LWT_UNIX_INIT_JOB(job, hid_read_timeout, length);
+  LWT_UNIX_INIT_JOB(job, hid_read_timeout, 0);
   job->dev = dev;
   job->length = length;
   job->milliseconds = milliseconds;
-  job->data = mldata;
+  job->data = Caml_ba_data_val(mldata);
   return lwt_unix_alloc_job(&(job->job));
 }
 
@@ -217,14 +215,14 @@ struct job_hid_write {
   struct lwt_unix_job job;
   /* The file descriptor. */
   hid_device *dev;
+  void *data;
   long length;
   long result;
   int error_code;
-  char buffer[];
 };
 
 static void worker_hid_write(struct job_hid_write *job) {
-  job->result = hid_write(job->dev, job->buffer, job->length);
+  job->result = hid_write(job->dev, job->data, job->length);
 }
 
 static value result_hid_write(struct job_hid_write *job)
@@ -239,11 +237,10 @@ CAMLprim value hid_write_job(value mldev, value mldata, value mllength)
 {
   long length = Long_val(mllength);
   hid_device *dev = Hid_val(mldev);
-  void *data = Caml_ba_data_val(mldata);
-  LWT_UNIX_INIT_JOB(job, hid_write, length);
+  LWT_UNIX_INIT_JOB(job, hid_write, 0);
   job->dev = dev;
   job->length = length;
-  memcpy(job->buffer, data, length);
+  job->data = Caml_ba_data_val(mldata);
   return lwt_unix_alloc_job(&(job->job));
 }
 

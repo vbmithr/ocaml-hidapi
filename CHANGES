@@ -1,3 +1,8 @@
+v1.2.1 2024-01-10 Paris
+---------------------
+
+- Fix segfault sometimes occurring after GC
+
 v1.2 2023-12-14 Paris
 ---------------------
 
